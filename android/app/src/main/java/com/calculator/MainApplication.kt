@@ -1,4 +1,4 @@
-package com.calculator
+package com.calculator.jodna
 
 import android.app.Application
 import com.facebook.react.PackageList
