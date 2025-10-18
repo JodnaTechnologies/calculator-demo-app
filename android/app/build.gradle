@@ -82,41 +82,58 @@ android {
         applicationId "com.calculator.jodna"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+
+        // Auto-increment versionCode based on Git commit count
+        versionCode getGitCommitCount()
         versionName "1.0"
-         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", "false"
+
+        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", "false"
         buildConfigField "boolean", "IS_EDGE_TO_EDGE_ENABLED", "false"
     }
-signingConfigs {
-    release {
-        storeFile file(MYAPP_RELEASE_STORE_FILE)
-        storePassword MYAPP_RELEASE_STORE_PASSWORD
-        keyAlias MYAPP_RELEASE_KEY_ALIAS
-        keyPassword MYAPP_RELEASE_KEY_PASSWORD
+
+    signingConfigs {
+        release {
+            storeFile file(MYAPP_RELEASE_STORE_FILE)
+            storePassword MYAPP_RELEASE_STORE_PASSWORD
+            keyAlias MYAPP_RELEASE_KEY_ALIAS
+            keyPassword MYAPP_RELEASE_KEY_PASSWORD
+        }
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
     }
-    debug {
-        storeFile file('debug.keystore')
-        storePassword 'android'
-        keyAlias 'androiddebugkey'
-        keyPassword 'android'
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            signingConfig signingConfigs.release // <- use release keystore
+            minifyEnabled enableProguardInReleaseBuilds
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
     }
 }
 
-buildTypes {
-    debug {
-        signingConfig signingConfigs.debug
-    }
-    release {
-        signingConfig signingConfigs.release // <- use release keystore
-        minifyEnabled enableProguardInReleaseBuilds
-        proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
-    }
-}
+/**
+ * Function to get the number of commits as versionCode.
+ * This increments the versionCode automatically on each build.
+ */
+def getGitCommitCount() {
+    try {
+        def commitCount = 'git rev-list --count HEAD'.execute().text.trim()
+        return commitCount.toInteger()
+    } catch (Exception e) {
 
+        return (System.currentTimeMillis() / 1000).toInteger()
+    }
 }
 
 dependencies {
-    // The version of react-native is set by the React Native Gradle Plugin
+
     implementation("com.facebook.react:react-android")
 
     if (hermesEnabled.toBoolean()) {
