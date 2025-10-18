@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 import {
   StyleSheet,
@@ -10,8 +11,9 @@ import {
   Switch,
   useColorScheme,
   Alert,
+  Animated,
 } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const lightTheme = {
   background: '#F5F5F5',
@@ -51,6 +53,8 @@ const App = () => {
   const [feedbackModal, setFeedbackModal] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [history, setHistory] = useState<string[]>([]);
+  const shakeAnim = useState(new Animated.Value(0))[0]; // Horizontal (X)
+  const bounceAnim = useState(new Animated.Value(0))[0]; // Vertical (Y)
 
   // Calculator handlers
   const handleNumber = (num: string) => {
@@ -58,9 +62,22 @@ const App = () => {
   };
 
   const handleOperator = (op: string) => {
-    setOperator(op);
-    setPrevValue(currValue);
-    setCurrValue('0');
+    if (prevValue && operator && currValue !== '0') {
+      calculate();
+      setOperator(op);
+    } else {
+      setPrevValue(currValue);
+      setCurrValue('0');
+      setOperator(op);
+    }
+  };
+
+  const handleBackspace = () => {
+    if (currValue.length === 1) {
+      setCurrValue('0');
+    } else {
+      setCurrValue(currValue.slice(0, -1));
+    }
   };
 
   const calculate = () => {
@@ -91,6 +108,11 @@ const App = () => {
     setPrevValue('');
     setHistory([`${a} ${operator} ${b} = ${result}`, ...history]);
   };
+  const clearAll = () => {
+    setPrevValue('');
+    setCurrValue('0');
+    setOperator('');
+  };
 
   const handleFeedbackSubmit = async () => {
     if (!feedback) {
@@ -115,6 +137,104 @@ const App = () => {
       setIsLoading(false);
     }
   };
+
+  const getClearOrBackspaceLabel = () => {
+    return currValue === '0' ? 'C' : '⌫';
+  };
+
+  const keyPads = [
+    getClearOrBackspaceLabel(),
+    '/',
+    '*',
+    '-',
+    '7',
+    '8',
+    '9',
+    '+',
+    '4',
+    '5',
+    '6',
+    '.',
+    '1',
+    '2',
+    '3',
+    '=',
+    '0',
+  ];
+
+  const shake = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnim, {
+        toValue: 8,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -8,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 6,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: -6,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(shakeAnim, {
+        toValue: 0,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const bounce = () => {
+    Animated.sequence([
+      Animated.timing(bounceAnim, {
+        toValue: -15,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bounceAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bounceAnim, {
+        toValue: -10,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bounceAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  useEffect(() => {
+    const startAnimationLoop = () => {
+      const runAnimation = () => {
+        const doShake = Math.random() > 0.5;
+
+        if (doShake) shake();
+        else bounce();
+
+        const nextDelay = 3000 + Math.random() * 2000;
+        setTimeout(runAnimation, nextDelay);
+      };
+
+      runAnimation();
+    };
+
+    startAnimationLoop();
+  }, []);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Theme toggle */}
@@ -143,24 +263,7 @@ const App = () => {
 
       {/* Calculator Buttons */}
       <View style={styles.keypad}>
-        {[
-          '7',
-          '8',
-          '9',
-          '/',
-          '4',
-          '5',
-          '6',
-          '*',
-          '1',
-          '2',
-          '3',
-          '-',
-          '0',
-          '.',
-          '=',
-          '+',
-        ].map(key => (
+        {keyPads.map(key => (
           <TouchableOpacity
             key={key}
             style={[
@@ -168,12 +271,14 @@ const App = () => {
               { backgroundColor: theme.button },
               key === '='
                 ? { backgroundColor: theme.equalsBtn }
-                : key.match(/[+\-*/%]/)
+                : key.match(/[+\-*/%]/) || key === '.'
                 ? { backgroundColor: theme.operatorBtn }
                 : {},
             ]}
             onPress={() => {
-              if (key === '=') calculate();
+              if (key === 'C') clearAll();
+              else if (key === '⌫') handleBackspace();
+              else if (key === '=') calculate();
               else if (key.match(/[+\-*/%]/)) handleOperator(key);
               else handleNumber(key);
             }}
@@ -186,14 +291,20 @@ const App = () => {
       </View>
 
       {/* Feedback Button */}
-      <TouchableOpacity
-        style={[styles.feedbackBtn, { backgroundColor: theme.feedbackBtn }]}
-        onPress={() => setFeedbackModal(true)}
+      <Animated.View
+        style={{
+          transform: [{ translateX: shakeAnim }, { translateY: bounceAnim }],
+        }}
       >
-        <Text style={[styles.feedbackText, { color: theme.textPrimary }]}>
-          Send Feedback
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.feedbackBtn, { backgroundColor: theme.feedbackBtn }]}
+          onPress={() => setFeedbackModal(true)}
+        >
+          <Text style={[styles.feedbackText, { color: '#fff' }]}>
+            Click me 😁
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
 
       {/* Feedback Modal */}
       <Modal visible={feedbackModal} transparent animationType="slide">
