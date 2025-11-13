@@ -122,7 +122,7 @@ const App = () => {
 
     setIsLoading(true);
     try {
-      await fetch('https://feedback-backend-nu.vercel.app/api/feedback', {
+      await fetch('https://feedback-api.82.29.170.171.nip.io/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedback }),
