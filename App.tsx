@@ -252,7 +252,13 @@ const App = () => {
       </View>
 
       {/* Display */}
-      <View style={[styles.display, { backgroundColor: theme.display }]}>
+      <View
+        style={[
+          styles.display,
+          { backgroundColor: theme.display },
+          { flexGrow: 1, justifyContent: 'flex-end' },
+        ]}
+      >
         <Text style={[styles.prevText, { color: theme.textSecondary }]}>
           {prevValue + operator}
         </Text>
@@ -383,14 +389,18 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     padding: 10,
+    // Ensuring buttons don't expand beyond the defined size
+    maxWidth: '100%',
   },
   button: {
-    width: 70,
-    height: 70,
-    margin: 5,
-    borderRadius: 35,
+    width: 70, // Fixed width
+    height: 70, // Fixed height
+    margin: 5, // Spacing between buttons
+    borderRadius: 35, // Rounded corners for circular buttons
     justifyContent: 'center',
     alignItems: 'center',
+    // Prevents text from pushing buttons out of shape
+    alignSelf: 'center',
   },
   btnText: { fontSize: 24 },
   feedbackBtn: {
