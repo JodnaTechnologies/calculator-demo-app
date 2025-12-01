@@ -56,6 +56,7 @@ const App = () => {
   const shakeAnim = useState(new Animated.Value(0))[0]; // Horizontal (X)
   const bounceAnim = useState(new Animated.Value(0))[0]; // Vertical (Y)
 
+  // Calculator handlers
   const handleNumber = (num: string) => {
     setCurrValue(currValue === '0' ? num : currValue + num);
   };
